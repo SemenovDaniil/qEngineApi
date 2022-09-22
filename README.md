@@ -87,6 +87,33 @@ for sheet in sheets:
 ```
 В качестве аргумента необходимо передать handle, который вернулся в методе обращения к документу.
 
+##### showVariables(self, handle, showreserve = False, showConfig = False) - Вернет список переменных со всеми атрибутами и выведет в консоль список переменных с несколькими атрибутами (isScriptCreated, qIncludeInBookmark, id, name, definition)
+```python
+variables = engineConnect.showVariables(docHandle,False,False)
+```
+вывод в консоль:
+```sh
+isScriptCreated qIncludeInBookmark id                                       name                           definition
+false           true               954d3849-1cf6-45e4-884f-65cc1b9fa193     vVariable3                     variable3
+false           true               a64cb8ad-594d-442d-9292-897d4c9acd22     vVariable4                     variable4
+true            false              3269f257-0cd0-4efa-bce6-854e74bb2931     vVariable1                     variable1
+```
+
+в качестве аргументов необходимо передать handle, который вернулся в методе обращения к документу, а так же два boolean параметра отвечающих за вывод зарезевированных и конфигурационных переменных.
+
+##### includeVariableInBookmark(self,handle,include=True,variable="ALL") - метод для регулирования включения/исключения переменных в закладках.
+**!!! В закладки можно включать только те переменные, которые были созданы в интерфейсе. Переменные объявленные в скрипте в закладках сохраняться не будут. Это ограничения движка qlik**
+```python
+engineConnect.includeVariableInBookmark(docHandle,True) #Позволит включать все переменные в закладки
+engineConnect.includeVariableInBookmark(docHandle,False) #Переменные не будут включаться в закладки
+```
+если необхолимо определить свойство только для одной переменной, то ее имя необходимо указать третьим аргументом
+```python
+engineConnect.includeVariableInBookmark(docHandle,True, 'vVariable3') #Значение переменной vVariable3 будет сохранятся в закладках
+engineConnect.includeVariableInBookmark(docHandle,False,'vVariable3') #Значение переменной vVariable3 не будет сохранятся в закладках
+```
+в качестве первого аргумента необходимо указать handle, который вернулся в методе обращения к документу
+
 ##### sendRequest(self,request) - произвольный запрос к engine api. Вернет json с ответом.
 ```python
 request = {
