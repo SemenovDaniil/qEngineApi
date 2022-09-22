@@ -38,7 +38,7 @@ if sessionCreated:
     del engineConnect #убиваем сессию после того как завершили все действия
 ```
 ##### Описание методов 
-##### **getDocList(self)** - возвращает список документов доступных пользователю
+- ##### **getDocList(self)** - возвращает список документов доступных пользователю
 ```python
 documents = engineConnect.getDocList()
 print(json.dumps(documents))
