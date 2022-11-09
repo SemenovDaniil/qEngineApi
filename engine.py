@@ -4,7 +4,7 @@ from websocket import create_connection
 import json
 
 def idCounter(self):
-    self.id +=1 
+    self.id +=1
     return self.id
 
 class QlikEngine():
@@ -26,10 +26,10 @@ class QlikEngine():
         requestHeader = {
                 'X-Qlik-User':f'UserDirectory={self.user_directory};'
                               f'UserId={self.user_id}',
-                'Cache-Control': 'no-cache'              
+                'Cache-Control': 'no-cache'
         }
 
-        
+
 
         try:
             self.ws = create_connection(socketUrl, sslopt = cert, header = requestHeader)
@@ -39,17 +39,24 @@ class QlikEngine():
             if  self.sessionState == 'SESSION_CREATED':
                 self.sessionCreated = True
             else:
-                self.sessionCreated = False    
-        except:
-            self.result = json.dumps({
-                "params": {"qSessionState":"error"}
-            })
-            self.sessionCreated = False 
-            print("error while websocket opening")   
+                self.sessionCreated = False
+        except Exception as e:
+            if type(e) == TimeoutError:
+                self.result = json.dumps({
+                    "params": {"qSessionState":"error"}
+                })
+                self.sessionCreated = False
+                print(e)
+            else:
+                self.result = json.dumps({
+                    "params": {"qSessionState":"error"}
+                })
+                self.sessionCreated = False
+                print("error while websocket opening")
 
 
-   
-    
+
+
     def getDocList(self):
         self.ws.send(json.dumps({
             "id": idCounter(self),
@@ -81,9 +88,9 @@ class QlikEngine():
                 "lastReloadTime":documentMeta.get("qLastReloadTime"),
                 "publishTime":documentMeta.get("publishTime"),
                 "stream":stream
-            }    
+            }
             documents.append(document)
-        
+
         return documents
 
     def openDoc(self, docId):
@@ -119,7 +126,7 @@ class QlikEngine():
 
         return data
 
-    def getSheetsObject(self,handle): 
+    def getSheetsObject(self,handle):
         self.ws.send(json.dumps({
             "method": "CreateSessionObject",
             "handle": handle,
@@ -222,7 +229,7 @@ class QlikEngine():
         self.ws.send(json.dumps(request))
 
         result = self.ws.recv()
-        data = json.loads(result)    
+        data = json.loads(result)
 
         return data
 
@@ -248,12 +255,12 @@ class QlikEngine():
                                 "outKey": -1,
                                 "id": idCounter(self)
                             }
-        
+
         self.ws.send(json.dumps(variableListRequest))
         result = self.ws.recv()
         variableList = json.loads(result)
-        listHandle = variableList['result']['qReturn']['qHandle']       
-        
+        listHandle = variableList['result']['qReturn']['qHandle']
+
         getLayoutRequest =  {
                                 "method": "GetLayout",
                                 "handle": listHandle,
@@ -261,7 +268,7 @@ class QlikEngine():
                                 "outKey": -1,
                                 "id": idCounter(self)
                             }
-        
+
         self.ws.send(json.dumps(getLayoutRequest))
         result = self.ws.recv()
         variables = json.loads(result)
@@ -298,7 +305,7 @@ class QlikEngine():
             result = self.ws.recv()
             data = json.loads(result)
             variableParams = data['result']
-            
+
             if(variableParams['qProp']['qIncludeInBookmark']):
                 qIncludeInBookmark = 'true'
             else:
@@ -306,17 +313,17 @@ class QlikEngine():
 
             if "qIsScriptCreated" in variable:
                 isScriptCreated = 'true'
-            else: 
+            else:
                 isScriptCreated = 'false'
 
             if "qDefinition" in variable:
                 definition = variable['qDefinition']
             else:
                 definition =  'without definition'
-            
+
             print ("{:<15} {:<18} {:<40} {:<30} {:<20}".format(isScriptCreated,qIncludeInBookmark, variable['qInfo']['qId'],variable['qName'],definition))
 
-        
+
         return variables
 
 
@@ -337,7 +344,7 @@ class QlikEngine():
             result = self.ws.recv()
             data = json.loads(result)
             variableHandle = data['result']['qReturn']['qHandle']
-            
+
             self.ws.send(json.dumps(
                 {
                     "jsonrpc": "2.0",
@@ -355,7 +362,7 @@ class QlikEngine():
             data = json.loads(result)
             variableParams = data['result']
             variableParams['qProp']['qIncludeInBookmark'] = include
-            
+
             request = json.dumps(
                 {
                     "jsonrpc": "2.0",
@@ -399,12 +406,12 @@ class QlikEngine():
                                 "outKey": -1,
                                 "id": idCounter(self)
                             }
-        
+
             self.ws.send(json.dumps(variableListRequest))
             result = self.ws.recv()
             variableList = json.loads(result)
-            listHandle = variableList['result']['qReturn']['qHandle']       
-            
+            listHandle = variableList['result']['qReturn']['qHandle']
+
             getLayoutRequest =  {
                                     "method": "GetLayout",
                                     "handle": listHandle,
@@ -412,7 +419,7 @@ class QlikEngine():
                                     "outKey": -1,
                                     "id": idCounter(self)
                                 }
-            
+
             self.ws.send(json.dumps(getLayoutRequest))
             result = self.ws.recv()
             variables = json.loads(result)
@@ -424,9 +431,7 @@ class QlikEngine():
             return 'finished'
 
 
-    #Object destroyer       
+    #Object destroyer
     def __del__(self):
         if self.sessionCreated:
             self.ws.close()
-        
-    

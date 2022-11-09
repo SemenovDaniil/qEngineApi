@@ -7,18 +7,18 @@
 pip install qEngineApi
 ```
 ### Используемые библиотеки
-- ##### ssl
-- ##### os
-- ##### websocket
-- ##### websocket-client
-- ##### json
+- ssl
+- os
+- websocket
+- websocket-client
+- json
 ### Как работать с библиотекой
 
-##### подключение библиотеки
+#### подключение библиотеки
 ```python
 from qEngineApi import QlikEngine
 ```
-##### создание подключения.
+#### создание подключения.
 ```python
 engineConnect = QlikEngine(host = "HOST" ,cert_path =  "path:/to/dir", user_directory = "DIRECTORY", user_id = "USER")
 ```
@@ -26,7 +26,9 @@ engineConnect = QlikEngine(host = "HOST" ,cert_path =  "path:/to/dir", user_dire
 - **host** -  адрес вашего сервера, где развернут qlik. Убедитесь что у машины, с которой вы будете отправлять запросы есть доступ к серверу qlik на порт **4747**.
 - **cert_path** - абсолютный путь до папки с сертификатами. Как выгрузить сертификаты, можно почитать [тут]. Экспортировать необходимо в формате **Platform independent PEM-format**. После экспорта появится три файла: root.pem, client.pem, client_key.pem. Все они должны лежать по указанному пути, сохраняя оригинальные именования.
 - **user_directory** - директория вашего пользователя (домен учетной записи)
-- **user_id** - ваш пользователь.
+- **user_id** - ваш пользователь
+
+Можно использовать внутренню учетную запись QS: user_directory="internal", user_id="sa_repository"
 
 **!!!Важно -на пользователя под которым вы подключаетесь распространяются все ограничения, как на доступ к документам/действиям, так и на доступ к данным внутри приложений в случае если включена section access. То есть доступ в engine api будет полностью соответствовать доступу в hub указанного пользователя. Указать можно любого пользователя под которым вы хотите работать.**
 
@@ -134,7 +136,7 @@ print(json.dumps(result))
 **Поэкспериментировать с запросами к engine api можно в [dev-hub->engine api explorer]. Попасть в него можно через hub->троеточие в верхнем правом углу страницы-> Dev-hub**
 
 [//]: #
-[тут]: <https://help.qlik.com/en-US/sense-admin/August2022/Subsystems/DeployAdministerQSE/Content/Sense_DeployAdminister/QSEoW/Administer_QSEoW/Managing_QSEoW/export-certificates.htm>
+[тут]: <https://help.qlik.com/en-US/sense-admin/November2022/Subsystems/DeployAdministerQSE/Content/Sense_DeployAdminister/QSEoW/Administer_QSEoW/Managing_QSEoW/export-certificates.htm>
 [pypi]: <https://pypi.org/project/qEngineApi/>
-[справке qlik]: <https://help.qlik.com/en-US/sense-developer/August2022/Subsystems/EngineJSONAPI/Content/service-genericobject-exportdata.htm>
-[dev-hub->engine api explorer]: <https://help.qlik.com/en-US/sense-developer/May2022/Subsystems/Dev-Hub/Content/Sense_Dev-Hub/EngineApiExplorer/engine-api-explorer.htm>
+[справке qlik]: <https://help.qlik.com/en-US/sense-developer/November2022/Subsystems/EngineJSONAPI/Content/service-genericobject-exportdata.htm>
+[dev-hub->engine api explorer]: <https://help.qlik.com/en-US/sense-developer/November2022/Subsystems/Dev-Hub/Content/Sense_Dev-Hub/EngineApiExplorer/engine-api-explorer.htm>
