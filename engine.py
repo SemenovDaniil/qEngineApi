@@ -38,12 +38,13 @@ class QlikEngine():
                 self.sessionCreated = True
             else:
                 self.sessionCreated = False
-        except:
+        except Exception as e:
             self.result = json.dumps({
                 "params": {"qSessionState":"error"}
             })
             self.sessionCreated = False 
             print("error while websocket opening")
+            print(e)
 
 
     def getDocList(self):
