@@ -2,6 +2,7 @@ import ssl
 import os
 from websocket import create_connection
 import json
+from pathlib import Path
 
 def idCounter(self):
     self.id +=1 
@@ -25,11 +26,8 @@ class QlikEngine():
 
         requestHeader = {
                 'X-Qlik-User':f'UserDirectory={self.user_directory};'
-                              f'UserId={self.user_id}',
-                'Cache-Control': 'no-cache'              
+                              f'UserId={self.user_id}'
         }
-
-        
 
         try:
             self.ws = create_connection(socketUrl, sslopt = cert, header = requestHeader)
@@ -39,17 +37,15 @@ class QlikEngine():
             if  self.sessionState == 'SESSION_CREATED':
                 self.sessionCreated = True
             else:
-                self.sessionCreated = False    
+                self.sessionCreated = False
         except:
             self.result = json.dumps({
                 "params": {"qSessionState":"error"}
             })
             self.sessionCreated = False 
-            print("error while websocket opening")   
+            print("error while websocket opening")
 
 
-   
-    
     def getDocList(self):
         self.ws.send(json.dumps({
             "id": idCounter(self),
@@ -70,20 +66,27 @@ class QlikEngine():
             documentMeta = doc.get("qMeta")
             if documentMeta.get("published"):
                 stream = documentMeta.get("stream").get("name")
+                streamId = documentMeta.get("stream").get("id")
+                isPublished = True
             else:
-                stream = None
+                stream = "None"
+                streamId = "None"
+                isPublished = False
 
             document = {
                 "docId": doc.get("qDocId"),
+                "docName": doc.get("qDocName"),
+                "isPublished": isPublished,
                 "qvfSize": doc.get("qFileSize"),
                 "createdDate":documentMeta.get("createdDate"),
                 "modifiedDate":documentMeta.get("modifiedDate"),
                 "lastReloadTime":documentMeta.get("qLastReloadTime"),
                 "publishTime":documentMeta.get("publishTime"),
-                "stream":stream
+                "stream":stream,
+                "streamId":streamId
             }    
             documents.append(document)
-        
+
         return documents
 
     def openDoc(self, docId):
@@ -222,7 +225,7 @@ class QlikEngine():
         self.ws.send(json.dumps(request))
 
         result = self.ws.recv()
-        data = json.loads(result)    
+        data = json.loads(result)
 
         return data
 
@@ -248,12 +251,12 @@ class QlikEngine():
                                 "outKey": -1,
                                 "id": idCounter(self)
                             }
-        
+
         self.ws.send(json.dumps(variableListRequest))
         result = self.ws.recv()
         variableList = json.loads(result)
-        listHandle = variableList['result']['qReturn']['qHandle']       
-        
+        listHandle = variableList['result']['qReturn']['qHandle']
+
         getLayoutRequest =  {
                                 "method": "GetLayout",
                                 "handle": listHandle,
@@ -261,7 +264,7 @@ class QlikEngine():
                                 "outKey": -1,
                                 "id": idCounter(self)
                             }
-        
+
         self.ws.send(json.dumps(getLayoutRequest))
         result = self.ws.recv()
         variables = json.loads(result)
@@ -316,7 +319,6 @@ class QlikEngine():
             
             print ("{:<15} {:<18} {:<40} {:<30} {:<20}".format(isScriptCreated,qIncludeInBookmark, variable['qInfo']['qId'],variable['qName'],definition))
 
-        
         return variables
 
 
@@ -355,7 +357,7 @@ class QlikEngine():
             data = json.loads(result)
             variableParams = data['result']
             variableParams['qProp']['qIncludeInBookmark'] = include
-            
+
             request = json.dumps(
                 {
                     "jsonrpc": "2.0",
@@ -399,11 +401,11 @@ class QlikEngine():
                                 "outKey": -1,
                                 "id": idCounter(self)
                             }
-        
+
             self.ws.send(json.dumps(variableListRequest))
             result = self.ws.recv()
             variableList = json.loads(result)
-            listHandle = variableList['result']['qReturn']['qHandle']       
+            listHandle = variableList['result']['qReturn']['qHandle']
             
             getLayoutRequest =  {
                                     "method": "GetLayout",
@@ -412,7 +414,7 @@ class QlikEngine():
                                     "outKey": -1,
                                     "id": idCounter(self)
                                 }
-            
+
             self.ws.send(json.dumps(getLayoutRequest))
             result = self.ws.recv()
             variables = json.loads(result)
@@ -424,9 +426,78 @@ class QlikEngine():
             return 'finished'
 
 
-    #Object destroyer       
+    def exportApp(self,dir, onlyPublished=True, streamId='ALL',appId="ALL",createFolderStructure = False, idInNaming = True):
+        def request(docId,file):
+            exportApp = {
+                "handle": -1,
+                "method": "ExportApp",
+                "params": {
+                    "qTargetPath": file,
+                    "qSrcAppId": doc["docId"],
+                    "qIds": [
+                       
+                    ],
+                    "qNoData": False
+                }
+            }
+            self.ws.send(json.dumps(exportApp))
+            result = self.ws.recv()
+            status = json.loads(result)
+            print(status)
+            status = status['result']['qSuccess']
+            if status:
+                printStatus = 'Success'
+            else:
+                printStatus = 'Failed'
+            print(f'{doc["docName"]} {printStatus}')
+            return status
+
+        docList = self.getDocList()
+        successCount = 0
+        failedCount = 0
+        if appId == "ALL":
+            for doc in docList:
+                if createFolderStructure:
+                    if idInNaming:
+                        filePath = f'{doc["stream"]} ({doc["streamId"]})'
+                    else:
+                        filePath = doc["stream"]
+                    exportdir= os.path.join(dir,filePath)
+                    if not os.path.isdir(exportdir):
+                         Path(exportdir).mkdir(parents=True, exist_ok=True)
+                else:
+                    exportdir = dir
+
+                if idInNaming:
+                    fileName = f'{doc["docName"]} ({doc["docId"]}).qvf'
+                else:
+                    fileName = f'{doc["docName"]}.qvf' 
+                file = os.path.join(exportdir,fileName)
+                if (onlyPublished == True and doc["isPublished"] == True) or onlyPublished == False:
+                    if streamId == 'ALL' or streamId == doc["streamId"]:
+                        status = request(doc["docId"],file)
+                
+                        if status:
+                            successCount += 1
+                        else:
+                            failedCount += 1
+        else:
+             for doc in docList:
+                 if appId == doc["docId"]:
+                    if idInNaming:
+                        fileName = f'{doc["docName"]} ({doc["docId"]}).qvf'
+                    else:
+                        fileName = f'{doc["docName"]}.qvf'
+                    file = os.path.join(dir,fileName)
+                    status = request(doc["docId"],file)
+                    if status:
+                        successCount += 1
+                    else:
+                        failedCount += 1
+           
+        print(f'Export finished with {successCount} success and {failedCount} failed')
+
+    #Object destroyer
     def __del__(self):
         if self.sessionCreated:
             self.ws.close()
-        
-    
