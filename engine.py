@@ -443,7 +443,6 @@ class QlikEngine():
             self.ws.send(json.dumps(exportApp))
             result = self.ws.recv()
             status = json.loads(result)
-            print(status)
             status = status['result']['qSuccess']
             if status:
                 printStatus = 'Success'
