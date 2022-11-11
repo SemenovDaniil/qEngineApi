@@ -87,7 +87,7 @@ for sheet in sheets:
 ```
 В качестве аргумента необходимо передать handle, который вернулся в методе обращения к документу.
 
-#### **showVariables(self, handle, showreserve = False, showConfig = False)** - Вернет список переменных со всеми атрибутами и выведет в консоль список переменных с несколькими атрибутами (isScriptCreated, qIncludeInBookmark, id, name, definition)
+#### **showVariables(self, handle, showreserve = False, showConfig = False)** - вернет список переменных со всеми атрибутами и выведет в консоль список переменных с несколькими атрибутами (isScriptCreated, qIncludeInBookmark, id, name, definition)
 ```python
 variables = engineConnect.showVariables(docHandle,False,False)
 ```
@@ -101,8 +101,9 @@ true            false              3269f257-0cd0-4efa-bce6-854e74bb2931     vVar
 
 в качестве аргументов необходимо передать handle, который вернулся в методе обращения к документу, а так же два boolean параметра отвечающих за вывод зарезевированных и конфигурационных переменных.
 
-#### **includeVariableInBookmark(self,handle,include=True,variable="ALL")** - метод для регулирования включения/исключения переменных в закладках.
-**!!! В закладки можно включать только те переменные, которые были созданы в интерфейсе. Переменные объявленные в скрипте в закладках сохраняться не будут. Это ограничения движка qlik**
+#### **includeVariableInBookmark(self,handle,include=True,variable="ALL")** - метод для регулирования включения/исключения переменных в закладки.
+
+  **!!! В закладки можно включать только те переменные, которые были созданы в интерфейсе. Переменные объявленные в скрипте в закладках сохраняться не будут. Это ограничения движка qlik**
 ```python
 engineConnect.includeVariableInBookmark(docHandle,True) #Позволит включать все переменные в закладки
 engineConnect.includeVariableInBookmark(docHandle,False) #Переменные не будут включаться в закладки
