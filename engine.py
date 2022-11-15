@@ -3,6 +3,7 @@ import os
 from websocket import create_connection
 import json
 from pathlib import Path
+import re
 
 def idCounter(self):
     self.id +=1 
@@ -10,13 +11,17 @@ def idCounter(self):
 
 class QlikEngine():
     #Initialize websocket
-    def __init__(self,host,cert_path,user_directory,user_id):
+    def __init__(self,host,cert_path,user_directory,user_id, app_id = None):
         self.host = host
         self.cert_path = cert_path
         self.user_directory = user_directory
         self.user_id = user_id
         self.id = 0
-        socketUrl = f"wss://{self.host}:4747/app/"
+        self.app_id = app_id
+        if self.app_id == None:
+            socketUrl = f"wss://{self.host}:4747/app/"
+        else:
+            socketUrl = f"wss://{self.host}:4747/app/{self.app_id}"
         cert = {
                 "cert_reqs":ssl.CERT_NONE,
                 'ca_certs':os.path.join(self.cert_path,'root.pem'),
@@ -496,6 +501,93 @@ class QlikEngine():
                         failedCount += 1
            
         print(f'Export finished with {successCount} success and {failedCount} failed')
+
+    def exportScript(self,dir,separate_tab=False, onlyPublished=True,streamId='ALL',appId='ALL',createFolderStructure=False, idInNaming = True):
+        docList = self.getDocList()
+
+        def getScript(docId):
+            appConnect =  QlikEngine(host = self.host ,cert_path = self.cert_path, user_directory = self.user_directory,  user_id = self.user_id, app_id=docId)
+            sessionCreated = appConnect.sessionCreated
+            if sessionCreated:
+                app = appConnect.openDoc(docId)
+                docHandle = app['result']['qReturn']['qHandle']
+                getScript = {
+                    "handle":docHandle,
+                    "method":"GetScript",
+                    "params": {}
+                }
+                appConnect.ws.send(json.dumps(getScript))
+                result = appConnect.ws.recv()
+                script = json.loads(result)
+                script = script["result"]["qScript"]
+            del appConnect
+            return script
+
+        def fileSave(doc,script):
+            docId = doc["docId"]
+            docName = doc["docName"]
+            docStream = doc["stream"]
+            docStreamId = doc["streamId"]
+            
+           
+            if idInNaming == True:
+                saveFileName = f'{docName} ({docId}).qvs'
+                pathName = f'{docStream} ({docStreamId})'
+                pathNameInStream = f'{docName} ({docId})'
+            else:
+                saveFileName = f'{docName}.qvs'
+                pathName = f'{docStream}'
+                pathNameInStream = f'{docName}'
+
+            if not separate_tab and not createFolderStructure:
+                file = open(f'{dir}\\{saveFileName}','w',encoding='utf-8',newline='')
+                file.write(script)
+                file.close()
+            elif not separate_tab and createFolderStructure:
+                finalPath = os.path.join(dir,pathName)
+                finalPath = os.path.join(finalPath,pathNameInStream)
+                if not os.path.isdir(finalPath):
+                    Path(finalPath).mkdir(parents=True, exist_ok=True)
+                file = open(f'{finalPath}\\{saveFileName}','w',encoding='utf-8',newline='')
+                file.write(script)
+                file.close()
+            else:
+                scriptSections = re.findall(r'(\$tab)(.*\r\n)',script,re.M)
+                for i in range(len(scriptSections)):
+                    sectionName = scriptSections[i][1].replace('\r\n','').strip()
+                    sectionStart = f'///{scriptSections[i][0]}{scriptSections[i][1]}'
+                    sectionStart = re.escape(sectionStart)
+                    if i+1 <= len(scriptSections)-1:
+                        sectionEnd = f'///{scriptSections[i+1][0]}{scriptSections[i+1][1]}'
+                        sectionEnd = re.escape(sectionEnd)
+                    else:
+                        sectionEnd = ''
+
+                    sectionScript = re.search(rf'{sectionStart}(.*){sectionEnd}',script,flags=re.DOTALL)
+                    finalPath = os.path.join(dir,pathName)
+                    finalPath = os.path.join(finalPath,pathNameInStream)
+                    if not os.path.isdir(finalPath):
+                        Path(finalPath).mkdir(parents=True, exist_ok=True)
+                    fileName = f'$tab{i+1} {sectionName}.qvs'
+                    fileName = re.sub(r'[\\/*?:"<>|]','',fileName)
+                    file = open(f'{finalPath}\\{fileName}','w',encoding='utf-8',newline='')
+                    file.write(sectionScript.group(1))
+                    file.close()
+
+        if appId == 'ALL':
+            for doc in docList:
+                if (onlyPublished == True and doc["isPublished"] == True) or onlyPublished == False:
+                    if streamId == 'ALL' or streamId == doc["streamId"]:
+                        script = getScript(doc["docId"])
+                        fileSave(doc,script)
+                        
+        else:
+            for doc in docList:
+                if appId == doc["docId"]:
+                    script = getScript(appId)
+                    fileSave(doc,script)
+
+        print('export complete')
 
     #Object destroyer
     def __del__(self):
