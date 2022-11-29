@@ -502,7 +502,7 @@ class QlikEngine():
            
         print(f'Export finished with {successCount} success and {failedCount} failed')
 
-    def exportScript(self,dir,separate_tab=False, onlyPublished=True,streamId='ALL',appId='ALL',createFolderStructure=False, idInNaming = True):
+    def exportScript(self,dir,separate_tab=False, onlyPublished=True,streamId='ALL',appId='ALL',createFolderStructure=False, idInNaming = True, successfullyExportTrace = False):
         docList = self.getDocList()
 
         def getScript(docId):
@@ -510,25 +510,32 @@ class QlikEngine():
             sessionCreated = appConnect.sessionCreated
             if sessionCreated:
                 app = appConnect.openDoc(docId)
-                docHandle = app['result']['qReturn']['qHandle']
-                getScript = {
-                    "handle":docHandle,
-                    "method":"GetScript",
-                    "params": {}
-                }
-                appConnect.ws.send(json.dumps(getScript))
-                result = appConnect.ws.recv()
-                script = json.loads(result)
-                script = script["result"]["qScript"]
+                returnedObject = {}
+                try:
+                    docHandle = app['result']['qReturn']['qHandle']
+                    getScript = {
+                        "handle":docHandle,
+                        "method":"GetScript",
+                        "params": {}
+                    }
+                    appConnect.ws.send(json.dumps(getScript))
+                    result = appConnect.ws.recv()
+                    script = json.loads(result)
+                    script = script["result"]["qScript"]
+                    returnedObject['isOpen'] = True
+                    returnedObject['script'] = script
+                except:
+                    returnedObject['isOpen'] = False
+                    returnedObject['message'] = app['error']['message']
+                    return returnedObject
             del appConnect
-            return script
+            return returnedObject
 
         def fileSave(doc,script):
             docId = doc["docId"]
             docName = doc["docName"]
             docStream = doc["stream"]
-            docStreamId = doc["streamId"]
-            
+            docStreamId = doc["streamId"]         
            
             if idInNaming == True:
                 saveFileName = f'{docName} ({docId}).qvs'
@@ -574,20 +581,36 @@ class QlikEngine():
                     file.write(sectionScript.group(1))
                     file.close()
 
+        errorCount = 0
+        attemptCount = 0
         if appId == 'ALL':
             for doc in docList:
                 if (onlyPublished == True and doc["isPublished"] == True) or onlyPublished == False:
                     if streamId == 'ALL' or streamId == doc["streamId"]:
+                        attemptCount += 1
                         script = getScript(doc["docId"])
-                        fileSave(doc,script)
+                        if not script['isOpen']:
+                            errorCount += 1
+                            print(f'{doc["docName"]} ({doc["docId"]}) export failed with error: {script["message"]}')
+                        else:
+                            fileSave(doc,script['script'])
+                            if successfullyExportTrace:
+                                print(f'{doc["docName"]} ({doc["docId"]}) export complete successfully')
                         
         else:
             for doc in docList:
                 if appId == doc["docId"]:
+                    attemptCount += 1
                     script = getScript(appId)
-                    fileSave(doc,script)
+                    if not script['isOpen']:
+                        errorCount += 1
+                        print(f'{doc["docName"]} ({doc["docId"]}) export failed with error: {script["message"]}')
+                    else:
+                        fileSave(doc,script['script'])
+                        if successfullyExportTrace:
+                                print(f'{doc["docName"]} ({doc["docId"]}) export complete successfully')
 
-        print('export complete')
+        print(f'export finished with {errorCount} errors out of {attemptCount} apps')
 
     #Object destroyer
     def __del__(self):
