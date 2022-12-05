@@ -140,7 +140,7 @@ Export finished with 71 success and 0 failed
 #### exportScript(self,dir,separate_tab=False, onlyPublished=True,streamId='ALL',appId='ALL',createFolderStructure=False, idInNaming = True) - экспортирует скрипты приложений в qvs файлы.
 Метод сохраняет все скрипты приложений в указанную папку на сервере где запускается скрипт.
 ```python
-engineConnect.exportScript(dir=path_to_export,separate_tab=True,onlyPublished=False,streamId='ALL',appId='ALL', createFolderStructure=True,idInNaming=False,successfullyExportTrace = False)
+engineConnect.exportScript(dir=path_to_export,separate_tab=True,onlyPublished=False,streamId='ALL',appId='ALL', createFolderStructure=True,idInNaming=False,successfullyExportTrace = False,traceExportDocRun = False)
 ```
 в качестве аргументов функциию передаются следующие параметры:
 - **dir** - директория в которую будут сохранены скрипты (**обязательный аргумент**).
@@ -151,6 +151,7 @@ engineConnect.exportScript(dir=path_to_export,separate_tab=True,onlyPublished=Fa
 - **createFolderStructure** - принимает значения True/False. При выгрузке создает в указанной директории структуру папок, соответствующую разбивке приложений по потокам.
 - **idInNaming** - принимает True/False. Отвечает за добавление к именам экспортируемых файлов и папок id приложений и потоков. Позволяет избежать перезатирания файлов в случае одинакового именования. **True по умолчанию. Стоит обратить внимание на максимальную длину путей в ОС из под которой выполняется скрипт. С id в именовании легко выйти за ее пределы и поймать ошибку.**
 - **successfullyExportTrace** - принимает True/False. Вывод в консоль записей об успешном экспорте приложения. По умолчанию выводятся только ошибки и общий итог экспорта.
+- **traceExportDocRun** - принимает True/False. Вывод в консоль записей о старте экспорта приложения. По умолчанию выключено.
 
 #### **sendRequest(self,request)** - произвольный запрос к engine api. Вернет json с ответом.
 ```python
