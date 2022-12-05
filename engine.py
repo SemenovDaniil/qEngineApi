@@ -502,7 +502,7 @@ class QlikEngine():
            
         print(f'Export finished with {successCount} success and {failedCount} failed')
 
-    def exportScript(self,dir,separate_tab=False, onlyPublished=True,streamId='ALL',appId='ALL',createFolderStructure=False, idInNaming = True, successfullyExportTrace = False):
+    def exportScript(self,dir,separate_tab=False, onlyPublished=True,streamId='ALL',appId='ALL',createFolderStructure=False, idInNaming = True, successfullyExportTrace = False, traceExportDocRun = False):
         docList = self.getDocList()
 
         def getScript(docId):
@@ -588,6 +588,8 @@ class QlikEngine():
                 if (onlyPublished == True and doc["isPublished"] == True) or onlyPublished == False:
                     if streamId == 'ALL' or streamId == doc["streamId"]:
                         attemptCount += 1
+                        if traceExportDocRun:
+                            print(f"run export doc {doc['docName']} ({doc['docId']})")
                         script = getScript(doc["docId"])
                         if not script['isOpen']:
                             errorCount += 1
@@ -601,6 +603,8 @@ class QlikEngine():
             for doc in docList:
                 if appId == doc["docId"]:
                     attemptCount += 1
+                    if traceExportDocRun:
+                            print(f"run export doc {doc['docName']} ({doc['docId']})")
                     script = getScript(appId)
                     if not script['isOpen']:
                         errorCount += 1
