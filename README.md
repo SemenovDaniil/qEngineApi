@@ -9,7 +9,7 @@ pip install qEngineApi
 ### Используемые библиотеки
 - ##### ssl
 - ##### os
-- ##### websocket-client (Спасибо [Стасу] за уточнение)
+- ##### websocket-client
 - ##### json
 - ##### Pathlib
 - ##### re
