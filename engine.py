@@ -432,7 +432,7 @@ class QlikEngine():
             return 'finished'
 
 
-    def exportApp(self,dir, onlyPublished=True, streamId='ALL',appId="ALL",createFolderStructure = False, idInNaming = True):
+    def exportApp(self,dir, onlyPublished=True, streamId='ALL',appId="ALL",createFolderStructure = False, idInNaming = True, noData = False):
         def request(docId,file):
             exportApp = {
                 "handle": -1,
@@ -443,7 +443,7 @@ class QlikEngine():
                     "qIds": [
                        
                     ],
-                    "qNoData": False
+                    "qNoData": noData
                 }
             }
             self.ws.send(json.dumps(exportApp))
